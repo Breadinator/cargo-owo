@@ -17,8 +17,8 @@ struct Opt {
 	bin: bool,
 
 	/// Name of the crate to be made
-	#[structopt(long, required=true)]
-	name: String,
+	#[structopt(required=true)]
+	name: Vec<String>,
 
 	/// Description to be added to README.md
 	#[structopt(long, default_value="")]
@@ -27,14 +27,26 @@ struct Opt {
 	/// Use this to add a license
 	#[structopt(long, default_value="")]
 	license: String,
-
-	/// Ignore this :)
-	#[structopt(name="ignore", required=false, default_value="")]
-	ignore: String,
 }
 
 fn main() {
     let opt = Opt::from_args();
+	let name = if &opt.name[0]=="owo"{
+		opt.name.get(1)
+	} else {
+		opt.name.get(0)
+	};
+	let name = match name {
+		Some(x) => x,
+		None => {
+			cmdout(
+				Command::new("cargo-owo")
+					.output()
+					.expect(&"Could not run `cargo-owo`".red())
+			);
+			return;
+		}
+	};
     
     if (opt.lib as u8 + opt.bin as u8)%2==0 {
     	println!("Please specify whether or not you would like to create a library or binary project with tags --lib or --bin respectively.");
@@ -46,20 +58,20 @@ fn main() {
 	let cargo_new = Command::new("cargo")
 		.arg("new")
 		.arg(&proj_type)
-		.arg(&opt.name)
+		.arg(&name)
 		.output()
 		.expect(&"Could not run `cargo new ...`".red());
 	cmdout(cargo_new);
 
 	let mut path = current_dir()
 		.expect(&"Could not get current_dir".red());
-	path.push(&opt.name);
+	path.push(&name);
 	set_current_dir(path)
 		.expect(&"Could not set_current_dir".red());
 
 	match File::create("README.md") {
 		Ok(mut f) => {
-			f.write_all(&format!("# {}", &opt.name).as_bytes())
+			f.write_all(&format!("# {}", &name).as_bytes())
 				.expect(&"Could not write to README.md".red());
 			f.write_all(&format!("\n{}", &opt.description).as_bytes())
 				.expect(&"Could not write to README.md".red());

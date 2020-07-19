@@ -1,4 +1,4 @@
-# cargo-owo
+# cargo-owo [![Crates.io](https://img.shields.io/crates/v/cargo-owo)](https://crates.io/crates/cargo-owo)
 cargo owo is a terribly-named program i wrote to automate how i start up a new project :) needs lots of work, but seems to be in a semi-usable state!
 
 # install
@@ -10,10 +10,10 @@ cargo install cargo-owo
 
 # usage
 ```
-cargo owo --name <crate name> <--lib / --bin> [--description "<description>"] [--license <license name>]
+cargo owo <crate name> <--lib / --bin> [--description "<description>"] [--license <license name>]
 ```
 
-e.g., `cargo owo --name mylibrary --lib --description "my library crate" --license mit` will create a library crate called "mylibrary" with a README.md with the description and a LICENSE file with given license.
+e.g., `cargo owo mylibrary --lib --description "my library crate" --license mit` will create a library crate called "mylibrary" with a README.md with the description and a LICENSE file with given license.
 
 run `cargo owo --help` to get the auto-generated help :)
 
