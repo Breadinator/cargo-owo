@@ -3,22 +3,32 @@ use std::process::Command;
 use std::io::{self, Write};
 use std::env::{current_dir, set_current_dir};
 use std::fs::File;
+use colored::*;
 
 #[derive(StructOpt, Debug)]
 #[structopt(bin_name = "cargo")]
 struct Opt {
+	/// Create crate as a library
 	#[structopt(long)]
 	lib: bool, 
 
+	/// Create crate as a binary
 	#[structopt(long)]
 	bin: bool,
 
+	/// Name of the crate to be made
 	#[structopt(long, required=true)]
 	name: String,
 
+	/// Description to be added to README.md
 	#[structopt(long, default_value="")]
 	description: String,
 
+	/// Use this to add a license
+	#[structopt(long, default_value="")]
+	license: String,
+
+	/// Ignore this :)
 	#[structopt(name="ignore", required=false, default_value="")]
 	ignore: String,
 }
@@ -38,36 +48,62 @@ fn main() {
 		.arg(&proj_type)
 		.arg(&opt.name)
 		.output()
-		.expect("Could not run `cargo new ...`");
+		.expect(&"Could not run `cargo new ...`".red());
 	cmdout(cargo_new);
 
 	let mut path = current_dir()
-		.expect("Could not get current_dir");
+		.expect(&"Could not get current_dir".red());
 	path.push(&opt.name);
 	set_current_dir(path)
-		.expect("Could not set_current_dir");
+		.expect(&"Could not set_current_dir".red());
 
 	match File::create("README.md") {
 		Ok(mut f) => {
 			f.write_all(&format!("# {}", &opt.name).as_bytes())
-				.expect("Could not write to README.md");
+				.expect(&"Could not write to README.md".red());
 			f.write_all(&format!("\n{}", &opt.description).as_bytes())
-				.expect("Could not write to README.md");
-			println!("Created template README.md");
+				.expect(&"Could not write to README.md".red());
+			println!("{}", "Created template README.md".green());
 
 		},
-		Err(e) => println!("{}", e)
+		Err(e) => println!("{}", &format!("{}", e).red())
+	}
+
+	if &opt.license != "" {
+		match File::create("LICENSE") {
+			Ok(mut file) => {
+				match Command::new("curl")
+					.arg(&format!("https://api.github.com/licenses/{}", &opt.license)).output() {
+						Ok(license_data) => {
+							if let Ok(ld_str) = String::from_utf8(license_data.stdout) {
+								for entry in json::parse(&ld_str).unwrap().entries() {
+									if entry.0 == "body" {
+										if let Some(body) = entry.1.as_str() {
+											match file.write_all(body.as_bytes()) {
+												Ok(_) => println!("{}", "Created LICENSE".green()),
+												Err(e) => println!("{}", &format!("{}", e).red()),
+											}
+										}
+									}
+								}
+							}
+						},
+						Err(e) => println!("{}", &format!("{}", e).red()),
+					};
+			},
+			Err(e) => println!("{}", &format!("{}", e).red()),
+		}
 	}
 
 	match File::create(".gitignore") {
 		Ok(mut f) => {
 			f.write_all("/target\n".as_bytes())
-				.expect("Could not write `/target\\n` to .gitignore");
+				.expect(&"Could not write `/target\\n` to .gitignore".red());
 			if opt.lib {
 				f.write_all("Cargo.lock".as_bytes())
-					.expect("Could not write `Cargo.lock` to .gitignore");
+					.expect(&"Could not write `Cargo.lock` to .gitignore".red());
 			}
-			println!("Created .gitignore");
+			println!("{}", "Created .gitignore".green());
 
 			let git_init = Command::new("git")
 				.arg("init")
@@ -85,16 +121,16 @@ fn main() {
 								Ok(o) => {
 									cmdout(o);
 								},
-								Err(e) => println!("{}", e),
+								Err(e) => println!("{}", &format!("{}", e).red()),
 							}
 						},
-						Err(e) => println!("{}", e),
+						Err(e) => println!("{}", &format!("{}", e).red()),
 					}
 				},
-				Err(e) => println!("{}", e),
+				Err(e) => println!("{}", &format!("{}", e).red()),
 			}
 		},
-		Err(e) => println!("{}", e),
+		Err(e) => println!("{}", &format!("{}", e).red()),
 	}
 	
 }
