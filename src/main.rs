@@ -1,6 +1,6 @@
 use structopt::StructOpt;
 use std::process::Command;
-use std::io::{self, Write};
+use std::io::{self, Write, Read};
 use std::env::{current_dir, set_current_dir};
 use std::fs::File;
 use colored::*;
@@ -68,6 +68,32 @@ fn main() {
 	path.push(&name);
 	set_current_dir(path)
 		.expect(&"Could not set_current_dir".red());
+
+	let mut cargo_file = File::open("Cargo.toml").unwrap();
+	let mut cargo_contents = String::new();
+	cargo_file.read_to_string(&mut cargo_contents).unwrap();
+	cargo_contents = cargo_contents.replace(
+		"edition = \"2018\"", 
+		"edition = \"2018\"\nlicense-file = \"LICENSE\""
+	).replace(
+		"edition = \"2018\"",
+		"edition = \"2018\"\nreadme = \"README.md\""
+	).replace(
+		"edition = \"2018\"",
+		&format!("edition = \"2018\"\ndescription = \"{}\"", opt.description)
+	).replace(
+		"edition = \"2018\"",
+		&format!("edition = \"2018\"\nrepository = \"{}\"", "")
+	);
+
+	match File::create("Cargo.toml") {
+		Ok(mut f) => {
+			f.write_all(cargo_contents.as_bytes())
+				.expect("Could not write to Cargo.toml");
+			println!("{}", "Added defaults to Cargo.toml".green());
+		},
+		Err(e) => println!("{}", &format!("{}", e).red())
+	}
 
 	match File::create("README.md") {
 		Ok(mut f) => {
@@ -148,7 +174,7 @@ fn main() {
 }
 
 fn cmdout(command: std::process::Output) {
-	let  [out, err] = [&command.stdout, &command.stderr];
+	let [out, err] = [&command.stdout, &command.stderr];
 	io::stdout().write_all(out).unwrap();
 	io::stderr().write_all(err).unwrap();
-} 
+}
